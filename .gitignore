@@ -1,4 +1,7 @@
-
 /log/
 /provision/vvv-nginx.conf
 /public_html
+
+# SublimeText project files
+/*.sublime-project
+*.sublime-workspace
