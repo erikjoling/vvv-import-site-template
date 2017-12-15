@@ -36,12 +36,15 @@ DB_BACKUP="/srv/database/backups/${VVV_SITE_NAME}.sql"
 if [[ ! -f "${VVV_PATH_TO_SITE}/public_html/wp-config.php" ]]; then
 
     # Copy the files from 
-	cp -r "${SITE_IMPORT}" "${VVV_PATH_TO_SITE}/"
+    echo "Importing website from `${SITE_IMPORT}`"
+    echo "Depending on the size of the website this could take a while..."
+    cp -r "${SITE_IMPORT}" "${VVV_PATH_TO_SITE}/"
 
     # Rename directory to `public_html`
     mv "${VVV_PATH_TO_SITE}/${VVV_SITE_NAME}" "${VVV_PATH_TO_SITE}/public_html" 
 
     # Change name of current wp-config.php to wp-config-backup.php
+    echo "Backing up wp-config.php"
     mv "${VVV_PATH_TO_SITE}/public_html/wp-config.php" "${VVV_PATH_TO_SITE}/public_html/wp-config-backup.php"
 fi
 
@@ -68,7 +71,7 @@ define( 'SAVEQUERIES', false );
 define( 'WP_POST_REVISIONS', 5 );
 
 /** Don't allow file editing from inside WordPress */
-define('DISALLOW_FILE_EDIT', true);
+define( 'DISALLOW_FILE_EDIT', true );
 
 /**
  * END CUSTOM
@@ -84,11 +87,13 @@ echo -e "\n DB operations done.\n\n"
 
 # Import database
 echo -e "\nImporting database '${DB_BACKUP}'"
-# noroot wp db import "${DB_BACKUP}"
+echo -e "\nwp db import '${DB_BACKUP}'"
+noroot wp db import "${DB_BACKUP}"
 
 # Search and replace database
 echo -e "\nSearch-replace database '${DB_NAME}'"
-# noroot wp search-replace "${SOURCE_URL}" "http://${DOMAIN}"
+echo -e "\nwp search-replace '${SOURCE_URL}' 'http://${DOMAIN}' --all-tables-with-prefix"
+noroot wp search-replace "${SOURCE_URL}" "http://${DOMAIN}" --all-tables-with-prefix
 
 # Nginx Logs
 mkdir -p ${VVV_PATH_TO_SITE}/log

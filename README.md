@@ -1,7 +1,7 @@
 # VVV Import site template
 For when you just need a simple dev site to import
 
-- Version: 0.1
+- Version: 0.2
 - Author: Erik Joling <erik@joling.me>
 
 ## Overview
@@ -30,7 +30,7 @@ my-site:
     [...]
   custom:
     source_url: url_of_live_website (for search-replace database)
-    db_tabel_prefix: wp_ (default)
+    db_table_prefix: wp_ (default)
 
 ```
 
