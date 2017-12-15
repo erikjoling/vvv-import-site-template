@@ -1,13 +1,69 @@
 #!/usr/bin/env bash
 # Provision a wordpress website to import
 
-DEFAULT_DOMAIN="${VVV_SITE_NAME}.dev"
-DOMAIN=`get_primary_host "${DEFAULT_DOMAIN}"`
+# Get the first host specified in vvv-custom.yml. Fallback: <site-name>.test
+DOMAIN=`get_primary_host "${VVV_SITE_NAME}".test`
+
+# Get the hosts specified in vvv-custom.yml. Fallback: DOMAIN value
 DOMAINS=`get_hosts "${DOMAIN}"`
 
+# Get the database name specified in vvv-custom.yml. Fallback: site-name
 DB_NAME=`get_config_value 'db_name' "${VVV_SITE_NAME}"`
 DB_NAME=${DB_NAME//[\\\/\.\<\>\:\"\'\|\?\!\*-]/}
-DB_BACKUP="${VVV_SITE_NAME}.sql"
+
+# Get the source url (to search-and-replace)
+SOURCE_URL=`get_config_value 'source_url' "http://www.${VVV_SITE_NAME}.nl"`
+
+# Get the table_prefix
+DB_TABLE_PREFIX=`get_config_value 'db_table_prefix' "wp_"`
+
+# Get database backup file
+DB_BACKUP="/srv/database/backups/${VVV_SITE_NAME}.sql"
+
+# Steps:
+# 0. WordPress files need to live in `www/${VVV_SITE_NAME}/public_html/`
+# 1. Change name of wp-config if it exists
+# 2. Create new wp-config
+# 3. Import database
+#    a. If database not exist, create one
+#    b. Import sql
+#    c. search-replace
+
+# Change name of current wp-config.php to wp-config-backup.php
+if [[ -f "${VVV_PATH_TO_SITE}/public_html/wp-config.php" ]]; then
+	mv "${VVV_PATH_TO_SITE}/public_html/wp-config.php" "${VVV_PATH_TO_SITE}/public_html/wp-config-backup.php"
+fi
+
+# Create new wp-config
+if [[ ! -f "${VVV_PATH_TO_SITE}/public_html/wp-config.php" ]]; then
+    echo "Configuring WordPress..."
+    noroot wp config create --dbname="${DB_NAME}" --dbuser=wp --dbpass=wp --dbprefix="${DB_TABLE_PREFIX}" --quiet --extra-php <<PHP
+/**
+ * CUSTOM 
+ */
+
+/** Main debug setting */
+define( 'WP_DEBUG', true );
+
+if (WP_DEBUG) {
+    define('SCRIPT_DEBUG', true);
+    define('WP_DEBUG_LOG', true);
+}
+
+/** Only activate when researching (heavy on resources) */
+define( 'SAVEQUERIES', false );
+
+/** Limit post revisions to 5 at max */
+define( 'WP_POST_REVISIONS', 5 );
+
+/** Don't allow file editing from inside WordPress */
+define('DISALLOW_FILE_EDIT', true);
+
+/**
+ * END CUSTOM
+ */
+PHP
+fi
 
 # Make a database, if we don't already have one
 echo -e "\nCreating database '${DB_NAME}' (if it's not already there)"
@@ -15,39 +71,13 @@ mysql -u root --password=root -e "CREATE DATABASE IF NOT EXISTS ${DB_NAME}"
 mysql -u root --password=root -e "GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO wp@localhost IDENTIFIED BY 'wp';"
 echo -e "\n DB operations done.\n\n"
 
-# Move into the newly mapped backups directory, where mysqldump(ed) SQL files are stored
-printf "\nStart MySQL Database Import\n"
-cd "/srv/database/backups/"
+# Import database
+echo -e "\nImporting database '${DB_BACKUP}'"
+# noroot wp db import "${DB_BACKUP}"
 
-# Check if backup file exists
-if [ -s "$DB_BACKUP" ]; then
-	mysql_cmd='SHOW TABLES FROM `'$DB_NAME'`' # Required to support hypens in database names
-	db_exist=`mysql -u root -proot --skip-column-names -e "$mysql_cmd"`
-	# db_exist=`mysql -u root -proot --skip-column-names -e "SHOW TABLES FROM '$DB_NAME'"`
-
-	if [ "$?" != "0" ] # $? is a variable holding the return value of the last command you ran.
-	then
-		# Database exists and holds tables. Do nothing
-		printf "  * Error - Database $DB_NAME does not exist. That means no importing\n"
-	else
-		if [ "" == "$db_exist" ]; then
-			# Database does exist but has no tables. Import sql-backup
-			printf "mysql -u root -proot $DB_NAME < $DB_BACKUP\n"
-			mysql -u root -proot $DB_NAME < $DB_BACKUP
-			printf "  * Import of $DB_NAME successful\n"
-		else
-			# Database exists and holds tables. Do nothing
-			printf "  * Skipped import of $DB_NAME - tables exist\n"
-		fi
-	fi
-
-fi
-
-# Move back to project directory
-cd ${VVV_PATH_TO_SITE}
-
-# Create public_html
-mkdir -p ${VVV_PATH_TO_SITE}/public_html
+# Search and replace database
+echo -e "\nSearch-replace database '${DB_NAME}'"
+# noroot wp search-replace "${SOURCE_URL}" "http://${DOMAIN}"
 
 # Nginx Logs
 mkdir -p ${VVV_PATH_TO_SITE}/log
