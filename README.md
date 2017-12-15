@@ -8,7 +8,7 @@ For when you just need a simple dev site to import
 This template will allow you to create an imported WordPress website using `vvv-custom.yml`. 
 
 But first:
-1. Put the imported WordPress files in `www/{mysite}/public_html/`
+1. Put the imported WordPress files in `www/_import/{mysite}/`. 
 2. Store the database copy in `database/backups/` as `{mysite}.sql`. 
 
 Afterwards:

@@ -1,3 +1,4 @@
+- Fixed: Website can't be present in site/public_html before provisioning
 - Use more wp-cli for provisioning
 - Improved Readme
 

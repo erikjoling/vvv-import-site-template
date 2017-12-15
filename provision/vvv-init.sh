@@ -17,6 +17,9 @@ SOURCE_URL=`get_config_value 'source_url' "http://www.${VVV_SITE_NAME}.nl"`
 # Get the table_prefix
 DB_TABLE_PREFIX=`get_config_value 'db_table_prefix' "wp_"`
 
+# Site import
+SITE_IMPORT="/srv/www/_import/${VVV_SITE_NAME}"
+
 # Get database backup file
 DB_BACKUP="/srv/database/backups/${VVV_SITE_NAME}.sql"
 
@@ -29,12 +32,20 @@ DB_BACKUP="/srv/database/backups/${VVV_SITE_NAME}.sql"
 #    b. Import sql
 #    c. search-replace
 
-# Change name of current wp-config.php to wp-config-backup.php
-if [[ -f "${VVV_PATH_TO_SITE}/public_html/wp-config.php" ]]; then
-	mv "${VVV_PATH_TO_SITE}/public_html/wp-config.php" "${VVV_PATH_TO_SITE}/public_html/wp-config-backup.php"
+# Import the site if no wp-config exists
+if [[ ! -f "${VVV_PATH_TO_SITE}/public_html/wp-config.php" ]]; then
+
+    # Copy the files from 
+	cp -r "${SITE_IMPORT}" "${VVV_PATH_TO_SITE}/"
+
+    # Rename directory to `public_html`
+    mv "${VVV_PATH_TO_SITE}/${VVV_SITE_NAME}" "${VVV_PATH_TO_SITE}/public_html" 
+
+    # Change name of current wp-config.php to wp-config-backup.php
+    mv "${VVV_PATH_TO_SITE}/public_html/wp-config.php" "${VVV_PATH_TO_SITE}/public_html/wp-config-backup.php"
 fi
 
-# Create new wp-config
+# Create new wp-config if no wp-config exists
 if [[ ! -f "${VVV_PATH_TO_SITE}/public_html/wp-config.php" ]]; then
     echo "Configuring WordPress..."
     noroot wp config create --dbname="${DB_NAME}" --dbuser=wp --dbpass=wp --dbprefix="${DB_TABLE_PREFIX}" --quiet --extra-php <<PHP
