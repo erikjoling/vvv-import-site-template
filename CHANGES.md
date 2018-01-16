@@ -1,6 +1,9 @@
+- Removed echoing of \`
+- dos2unix to fix line-ending
+
 0.2.1
-- Skip database creation if website is already installed
-- Skip log creation if website is already installed
+- Skipped database creation if website is already installed
+- Skipped log creation if website is already installed
 
 0.2
 - Improved feedback during process

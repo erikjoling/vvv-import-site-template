@@ -36,7 +36,7 @@ DB_BACKUP="/srv/database/backups/${VVV_SITE_NAME}.sql"
 if [[ ! -f "${VVV_PATH_TO_SITE}/public_html/wp-config.php" ]]; then
 
     # Copy the files from 
-    echo "Importing website from `${SITE_IMPORT}`"
+    echo "Importing website from '${SITE_IMPORT}'"
     echo "Depending on the size of the website this could take a while..."
     cp -r "${SITE_IMPORT}" "${VVV_PATH_TO_SITE}/"
 
