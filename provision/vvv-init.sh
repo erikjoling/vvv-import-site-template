@@ -79,26 +79,34 @@ define( 'DISALLOW_FILE_EDIT', true );
 PHP
 fi
 
-# Make a database, if we don't already have one
-echo -e "\nCreating database '${DB_NAME}' (if it's not already there)"
-mysql -u root --password=root -e "CREATE DATABASE IF NOT EXISTS ${DB_NAME}"
-mysql -u root --password=root -e "GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO wp@localhost IDENTIFIED BY 'wp';"
-echo -e "\n DB operations done.\n\n"
+# Database setup and import
+# Skip if website is already installed
+if ! $(noroot wp core is-installed); then
 
-# Import database
-echo -e "\nImporting database '${DB_BACKUP}'"
-echo -e "\nwp db import '${DB_BACKUP}'"
-noroot wp db import "${DB_BACKUP}"
+    # Make a database, if we don't already have one
+    echo -e "\nCreating database '${DB_NAME}' (if it's not already there)"
+    mysql -u root --password=root -e "CREATE DATABASE IF NOT EXISTS ${DB_NAME}"
+    mysql -u root --password=root -e "GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO wp@localhost IDENTIFIED BY 'wp';"
+    echo -e "\n DB operations done.\n\n"
 
-# Search and replace database
-echo -e "\nSearch-replace database '${DB_NAME}'"
-echo -e "\nwp search-replace '${SOURCE_URL}' 'http://${DOMAIN}' --all-tables-with-prefix"
-noroot wp search-replace "${SOURCE_URL}" "http://${DOMAIN}" --all-tables-with-prefix
+    # Import database
+    echo -e "\nImporting database '${DB_BACKUP}'"
+    echo -e "\nwp db import '${DB_BACKUP}'"
+    noroot wp db import "${DB_BACKUP}"
 
-# Nginx Logs
-mkdir -p ${VVV_PATH_TO_SITE}/log
-touch ${VVV_PATH_TO_SITE}/log/error.log
-touch ${VVV_PATH_TO_SITE}/log/access.log
+    # Search and replace database
+    echo -e "\nSearch-replace database '${DB_NAME}'"
+    echo -e "\nwp search-replace '${SOURCE_URL}' 'http://${DOMAIN}' --all-tables-with-prefix"
+    noroot wp search-replace "${SOURCE_URL}" "http://${DOMAIN}" --all-tables-with-prefix
 
-cp -f "${VVV_PATH_TO_SITE}/provision/vvv-nginx.conf.tmpl" "${VVV_PATH_TO_SITE}/provision/vvv-nginx.conf"
-sed -i "s#{{DOMAINS_HERE}}#${DOMAINS}#" "${VVV_PATH_TO_SITE}/provision/vvv-nginx.conf"
+    # Nginx Logs
+    mkdir -p ${VVV_PATH_TO_SITE}/log
+    touch ${VVV_PATH_TO_SITE}/log/error.log
+    touch ${VVV_PATH_TO_SITE}/log/access.log
+
+    cp -f "${VVV_PATH_TO_SITE}/provision/vvv-nginx.conf.tmpl" "${VVV_PATH_TO_SITE}/provision/vvv-nginx.conf"
+    sed -i "s#{{DOMAINS_HERE}}#${DOMAINS}#" "${VVV_PATH_TO_SITE}/provision/vvv-nginx.conf"
+
+elif
+    echo -e "\nWebsite '${VVV_SITE_NAME}' already installed according to wp-cli"
+fi

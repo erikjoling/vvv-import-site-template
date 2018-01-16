@@ -1,3 +1,7 @@
+0.2.1
+- Skip database creation if website is already installed
+- Skip log creation if website is already installed
+
 0.2
 - Improved feedback during process
 - Included --all-tables-with-prefix in search-replace
