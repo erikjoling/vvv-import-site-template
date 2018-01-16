@@ -81,8 +81,7 @@ fi
 
 # Database setup and import
 # Skip if website is already installed
-if ! $(noroot wp core is-installed); then
-
+if [[ ! $(noroot wp core is-installed) ]]; then
     # Make a database, if we don't already have one
     echo -e "\nCreating database '${DB_NAME}' (if it's not already there)"
     mysql -u root --password=root -e "CREATE DATABASE IF NOT EXISTS ${DB_NAME}"
@@ -106,7 +105,6 @@ if ! $(noroot wp core is-installed); then
 
     cp -f "${VVV_PATH_TO_SITE}/provision/vvv-nginx.conf.tmpl" "${VVV_PATH_TO_SITE}/provision/vvv-nginx.conf"
     sed -i "s#{{DOMAINS_HERE}}#${DOMAINS}#" "${VVV_PATH_TO_SITE}/provision/vvv-nginx.conf"
-
-elif
+else
     echo -e "\nWebsite '${VVV_SITE_NAME}' already installed according to wp-cli"
 fi
