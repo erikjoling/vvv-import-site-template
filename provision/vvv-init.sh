@@ -81,7 +81,7 @@ fi
 
 # Database setup and import
 # Skip if website is already installed
-if (( ! $(noroot wp core is-installed) )); then
+if ( ! $(noroot wp core is-installed) ); then
     # Make a database, if we don't already have one
     echo -e "\nCreating database '${DB_NAME}' (if it's not already there)"
     mysql -u root --password=root -e "CREATE DATABASE IF NOT EXISTS ${DB_NAME}"
