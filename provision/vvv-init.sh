@@ -79,9 +79,11 @@ define( 'DISALLOW_FILE_EDIT', true );
 PHP
 fi
 
-# Database setup and import
 # Skip if website is already installed
 if ( ! $(noroot wp core is-installed) ); then
+
+    # Database setup and import
+
     # Make a database, if we don't already have one
     echo -e "\nCreating database '${DB_NAME}' (if it's not already there)"
     mysql -u root --password=root -e "CREATE DATABASE IF NOT EXISTS ${DB_NAME}"
@@ -97,6 +99,8 @@ if ( ! $(noroot wp core is-installed) ); then
     echo -e "\nSearch-replace database '${DB_NAME}'"
     echo -e "\nwp search-replace '${SOURCE_URL}' 'http://${DOMAIN}' --all-tables-with-prefix"
     noroot wp search-replace "${SOURCE_URL}" "http://${DOMAIN}" --all-tables-with-prefix
+
+    # -----------
 
     # Nginx Logs
     mkdir -p ${VVV_PATH_TO_SITE}/log

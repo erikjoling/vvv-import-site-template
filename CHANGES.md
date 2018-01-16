@@ -1,3 +1,5 @@
+0.2.2
+- Fixed `wp core is-installed` check
 - Removed echoing of \`
 - dos2unix to fix line-ending
 
