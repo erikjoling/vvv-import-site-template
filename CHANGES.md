@@ -1,3 +1,7 @@
+0.3
+- Improved structure and documentation
+- Added .htaccess removal
+
 0.2.2
 - Fixed `wp core is-installed` check
 - Removed echoing of \`

@@ -24,15 +24,18 @@ SITE_IMPORT="/srv/www/_import/${VVV_SITE_NAME}"
 DB_BACKUP="/srv/database/backups/${VVV_SITE_NAME}.sql"
 
 # Steps:
-# 0. WordPress files need to live in `www/${VVV_SITE_NAME}/public_html/`
-# 1. Change name of wp-config if it exists
-# 2. Create new wp-config
-# 3. Import database
-#    a. If database not exist, create one
-#    b. Import sql
-#    c. search-replace
+# 1. Import Website
+#    - Copy from www/_import to www/
+#    - Backup and remove wp-config
+#    - Backup and remove htaccess 
+#    - Create new wp-config
+# 2. Import Database + server stuff
+#    - If database not exist, create one
+#    - Import sql
+#    - search-replace
+#    - ... Server stuff
 
-# Import the site if no wp-config exists
+# 1. Import Website
 if [[ ! -f "${VVV_PATH_TO_SITE}/public_html/wp-config.php" ]]; then
 
     # Copy the files from 
@@ -43,13 +46,14 @@ if [[ ! -f "${VVV_PATH_TO_SITE}/public_html/wp-config.php" ]]; then
     # Rename directory to `public_html`
     mv "${VVV_PATH_TO_SITE}/${VVV_SITE_NAME}" "${VVV_PATH_TO_SITE}/public_html" 
 
-    # Change name of current wp-config.php to wp-config-backup.php
+    # Backup and remove wp-config
     echo "Backing up wp-config.php"
     mv "${VVV_PATH_TO_SITE}/public_html/wp-config.php" "${VVV_PATH_TO_SITE}/public_html/wp-config-backup.php"
-fi
+    
+    # Backup and remove htaccess 
+    echo "Backing up .htaccess"
+    mv "${VVV_PATH_TO_SITE}/public_html/.htaccess" "${VVV_PATH_TO_SITE}/public_html/.htaccess-backup"
 
-# Create new wp-config if no wp-config exists
-if [[ ! -f "${VVV_PATH_TO_SITE}/public_html/wp-config.php" ]]; then
     echo "Configuring WordPress..."
     noroot wp config create --dbname="${DB_NAME}" --dbuser=wp --dbpass=wp --dbprefix="${DB_TABLE_PREFIX}" --quiet --extra-php <<PHP
 /**
@@ -79,7 +83,7 @@ define( 'DISALLOW_FILE_EDIT', true );
 PHP
 fi
 
-# Skip if website is already installed
+# 2. Import Database
 if ( ! $(noroot wp core is-installed) ); then
 
     # Database setup and import
