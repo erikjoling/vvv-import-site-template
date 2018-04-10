@@ -1,7 +1,7 @@
 # VVV Import site template
 For when you just need a simple dev site to import
 
-- Version: 0.3
+- Version: 0.3.1
 - Author: Erik Joling <erik@joling.me>
 
 ## Overview

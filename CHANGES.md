@@ -1,3 +1,6 @@
+0.3.1
+- Improved provision feedback
+
 0.3
 - Improved structure and documentation
 - Added .htaccess removal

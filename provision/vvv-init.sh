@@ -81,7 +81,10 @@ define( 'DISALLOW_FILE_EDIT', true );
  * END CUSTOM
  */
 PHP
+else
+    echo -e "\nSkip importing files... Website '${VVV_SITE_NAME}' already installed (wp-config file exists)"
 fi
+
 
 # 2. Import Database
 if ( ! $(noroot wp core is-installed) ); then
@@ -114,5 +117,5 @@ if ( ! $(noroot wp core is-installed) ); then
     cp -f "${VVV_PATH_TO_SITE}/provision/vvv-nginx.conf.tmpl" "${VVV_PATH_TO_SITE}/provision/vvv-nginx.conf"
     sed -i "s#{{DOMAINS_HERE}}#${DOMAINS}#" "${VVV_PATH_TO_SITE}/provision/vvv-nginx.conf"
 else
-    echo -e "\nWebsite '${VVV_SITE_NAME}' already installed according to wp-cli"
+    echo -e "\nSkip importing database... Website '${VVV_SITE_NAME}' already installed according to wp-cli"
 fi
