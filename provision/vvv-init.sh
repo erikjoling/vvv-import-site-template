@@ -1,5 +1,21 @@
 #!/usr/bin/env bash
-# Provision a wordpress website to import
+# Provision a wordpress website
+
+# Requirements:
+# - a website file-backup: `/www/imports/${VVV_SITE_NAME}/`
+# - a website db-backup: `/database/backups/${VVV_SITE_NAME}.sql`
+#
+# Process:
+# 1. Import Website
+#    - Copy the contents of www/imports/${VVV_SITE_NAME}/ to www/${VVV_SITE_NAME}/public_html/
+#    - Backup and remove wp-config
+#    - Backup and remove htaccess 
+#    - Create new wp-config
+# 2. Import Database + server stuff
+#    - If database not exist, create one
+#    - Import sql
+#    - search-replace
+# 3. NGINX
 
 # Get the first host specified in vvv-custom.yml. Fallback: <site-name>.test
 DOMAIN=`get_primary_host "${VVV_SITE_NAME}".test`
@@ -12,30 +28,27 @@ DB_NAME=`get_config_value 'db_name' "${VVV_SITE_NAME}"`
 DB_NAME=${DB_NAME//[\\\/\.\<\>\:\"\'\|\?\!\*-]/}
 
 # Get the source url (to search-and-replace)
-SOURCE_URL=`get_config_value 'source_url' "http://www.${VVV_SITE_NAME}.nl"`
+SOURCE_URL=`get_config_value 'source_url' "false"`
 
 # Get the table_prefix
 DB_TABLE_PREFIX=`get_config_value 'db_table_prefix' "wp_"`
 
 # Site import
-SITE_IMPORT="/srv/www/_import/${VVV_SITE_NAME}"
+SITE_IMPORT="/srv/www/imports/${VVV_SITE_NAME}"
 
 # Get database backup file
 DB_BACKUP="/srv/database/backups/${VVV_SITE_NAME}.sql"
 
-# Steps:
-# 1. Import Website
-#    - Copy from www/_import to www/
-#    - Backup and remove wp-config
-#    - Backup and remove htaccess 
-#    - Create new wp-config
-# 2. Import Database + server stuff
-#    - If database not exist, create one
-#    - Import sql
-#    - search-replace
-#    - ... Server stuff
+#
+# START
+#
+echo -e "\nStart importing website..."
 
-# 1. Import Website
+#
+# WEBSITE FILES
+#
+
+# Only import if there is no website
 if [[ ! -f "${VVV_PATH_TO_SITE}/public_html/wp-config.php" ]]; then
 
     # Copy the files from 
@@ -47,12 +60,16 @@ if [[ ! -f "${VVV_PATH_TO_SITE}/public_html/wp-config.php" ]]; then
     mv "${VVV_PATH_TO_SITE}/${VVV_SITE_NAME}" "${VVV_PATH_TO_SITE}/public_html" 
 
     # Backup and remove wp-config
-    echo "Backing up wp-config.php"
-    mv "${VVV_PATH_TO_SITE}/public_html/wp-config.php" "${VVV_PATH_TO_SITE}/public_html/wp-config-backup.php"
+    if [[ ! -f "${VVV_PATH_TO_SITE}/public_html/wp-config.php" ]]; then        
+        echo "Backing up wp-config.php"
+        mv "${VVV_PATH_TO_SITE}/public_html/wp-config.php" "${VVV_PATH_TO_SITE}/public_html/wp-config-backup.php"
+    fi
     
-    # Backup and remove htaccess 
-    echo "Backing up .htaccess"
-    mv "${VVV_PATH_TO_SITE}/public_html/.htaccess" "${VVV_PATH_TO_SITE}/public_html/.htaccess-backup"
+    # Backup and remove .htaccess
+    if [[ ! -f "${VVV_PATH_TO_SITE}/public_html/.htaccess" ]]; then        
+        echo "Backing up .htaccess"
+        mv "${VVV_PATH_TO_SITE}/public_html/.htaccess" "${VVV_PATH_TO_SITE}/public_html/.htaccess-backup"
+    fi
 
     echo "Configuring WordPress..."
     noroot wp config create --dbname="${DB_NAME}" --dbuser=wp --dbpass=wp --dbprefix="${DB_TABLE_PREFIX}" --quiet --extra-php <<PHP
@@ -82,11 +99,15 @@ define( 'DISALLOW_FILE_EDIT', true );
  */
 PHP
 else
-    echo -e "\nSkip importing files... Website '${VVV_SITE_NAME}' already installed (wp-config file exists)"
+    echo -e "\nSkip importing files..."
 fi
 
 
-# 2. Import Database
+#
+# DATABASE
+#
+
+# Only import if there is not an installed website
 if ( ! $(noroot wp core is-installed) ); then
 
     # Database setup and import
@@ -102,20 +123,50 @@ if ( ! $(noroot wp core is-installed) ); then
     echo -e "\nwp db import '${DB_BACKUP}'"
     noroot wp db import "${DB_BACKUP}"
 
-    # Search and replace database
-    echo -e "\nSearch-replace database '${DB_NAME}'"
-    echo -e "\nwp search-replace '${SOURCE_URL}' 'http://${DOMAIN}' --all-tables-with-prefix"
-    noroot wp search-replace "${SOURCE_URL}" "http://${DOMAIN}" --all-tables-with-prefix
+    # # If there is a source_url, match it with current domain. try search and replace database
+    # if [ -z "${SOURCE_URL}" ]; then
 
-    # -----------
+        # echo -e "\nSearch-replace database '${DB_NAME}'"
+        # echo -e "\nwp search-replace '${SOURCE_URL}' 'http://${DOMAIN}' --all-tables-with-prefix"
+        # noroot wp search-replace "${SOURCE_URL}" "http://${DOMAIN}" --all-tables-with-prefix
 
+    # fi
+
+else
+    echo -e "\nSkip importing database..."
+fi
+
+#
+# NGINX Server
+#
+
+# Setup logs
+if [[ ! -d "${VVV_PATH_TO_SITE}/provision/log" ]]; then
     # Nginx Logs
+    echo "Setting up logs..."
     mkdir -p ${VVV_PATH_TO_SITE}/log
     touch ${VVV_PATH_TO_SITE}/log/error.log
     touch ${VVV_PATH_TO_SITE}/log/access.log
-
-    cp -f "${VVV_PATH_TO_SITE}/provision/vvv-nginx.conf.tmpl" "${VVV_PATH_TO_SITE}/provision/vvv-nginx.conf"
-    sed -i "s#{{DOMAINS_HERE}}#${DOMAINS}#" "${VVV_PATH_TO_SITE}/provision/vvv-nginx.conf"
-else
-    echo -e "\nSkip importing database... Website '${VVV_SITE_NAME}' already installed according to wp-cli"
 fi
+
+# Setup configuration
+if [[ ! -f "${VVV_PATH_TO_SITE}/provision/vvv-nginx.conf" ]]; then
+
+    # Nginx Configuration
+    echo "Setting up configuration..."
+    cp -f "${VVV_PATH_TO_SITE}/provision/vvv-nginx.conf.tmpl" "${VVV_PATH_TO_SITE}/provision/vvv-nginx.conf"
+
+    # SSL/TLS
+    echo "Setting up ssl/tls..."
+    if [ -n "$(type -t is_utility_installed)" ] && [ "$(type -t is_utility_installed)" = function ] && `is_utility_installed core tls-ca`; then
+        sed -i "s#{{TLS_CERT}}#ssl_certificate /vagrant/certificates/${VVV_SITE_NAME}/dev.crt;#" "${VVV_PATH_TO_SITE}/provision/vvv-nginx.conf"
+        sed -i "s#{{TLS_KEY}}#ssl_certificate_key /vagrant/certificates/${VVV_SITE_NAME}/dev.key;#" "${VVV_PATH_TO_SITE}/provision/vvv-nginx.conf"
+    else
+        sed -i "s#{{TLS_CERT}}##" "${VVV_PATH_TO_SITE}/provision/vvv-nginx.conf"
+        sed -i "s#{{TLS_KEY}}##" "${VVV_PATH_TO_SITE}/provision/vvv-nginx.conf"
+    fi
+
+else
+    echo -e "\nSkip setting up NGINX..."
+fi
+
