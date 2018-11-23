@@ -59,14 +59,14 @@ if [[ ! -f "${VVV_PATH_TO_SITE}/public_html/wp-config.php" ]]; then
     # Rename directory to `public_html`
     mv "${VVV_PATH_TO_SITE}/${VVV_SITE_NAME}" "${VVV_PATH_TO_SITE}/public_html" 
 
-    # Backup and remove wp-config
-    if [[ ! -f "${VVV_PATH_TO_SITE}/public_html/wp-config.php" ]]; then        
+    # If wp-config.php exists: Backup and remove
+    if [[ -f "${VVV_PATH_TO_SITE}/public_html/wp-config.php" ]]; then        
         echo "Backing up wp-config.php"
         mv "${VVV_PATH_TO_SITE}/public_html/wp-config.php" "${VVV_PATH_TO_SITE}/public_html/wp-config-backup.php"
     fi
     
-    # Backup and remove .htaccess
-    if [[ ! -f "${VVV_PATH_TO_SITE}/public_html/.htaccess" ]]; then        
+    # If .htaccess exists: Backup and remove
+    if [[ -f "${VVV_PATH_TO_SITE}/public_html/.htaccess" ]]; then        
         echo "Backing up .htaccess"
         mv "${VVV_PATH_TO_SITE}/public_html/.htaccess" "${VVV_PATH_TO_SITE}/public_html/.htaccess-backup"
     fi
