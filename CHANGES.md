@@ -1,3 +1,7 @@
+0.3.2
+- Matched `vvv-nginx.conf.tmpl` with https://github.com/Varying-Vagrant-Vagrants/custom-site-template
+- Prefixed logs
+
 0.3.1
 - Improved provision feedback
 

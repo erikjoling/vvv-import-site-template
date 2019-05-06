@@ -145,8 +145,8 @@ if [[ ! -d "${VVV_PATH_TO_SITE}/provision/log" ]]; then
     # Nginx Logs
     echo "Setting up logs..."
     mkdir -p ${VVV_PATH_TO_SITE}/log
-    touch ${VVV_PATH_TO_SITE}/log/error.log
-    touch ${VVV_PATH_TO_SITE}/log/access.log
+    touch ${VVV_PATH_TO_SITE}/log/nginx-error.log
+    touch ${VVV_PATH_TO_SITE}/log/nginx-access.log
 fi
 
 # Setup configuration
